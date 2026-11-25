@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: trade-desk
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CLIENT_TOKENS
+        sync: false
+      - key: ADMIN_API_KEY
+        sync: false
+      - key: DB_PATH
+        value: /tmp/trade_desk.db

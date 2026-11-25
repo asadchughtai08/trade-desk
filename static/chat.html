@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trade Desk Chat</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 12px; }
+    #log { border: 1px solid #ccc; height: 60vh; overflow-y: auto; padding: 8px; border-radius: 6px; }
+    .me { text-align: right; color: #0a58ca; margin: 6px 0; }
+    .bot { text-align: left; margin: 6px 0; }
+    #row { display: flex; gap: 6px; margin-top: 8px; }
+    #msg { flex: 1; padding: 8px; }
+  </style>
+</head>
+<body>
+  <h3>Trade Desk Assistant</h3>
+  <div id="log"></div>
+  <div id="row">
+    <input id="msg" placeholder="Type your message..." maxlength="500">
+    <button id="send">Send</button>
+  </div>
+  <script>
+    // token link se milta hai: /?token=abc
+    const token = new URLSearchParams(location.search).get("token") || "";
+    // har browser tab ki apni session id
+    const sessionId = crypto.randomUUID();
+    const log = document.getElementById("log");
+    const msg = document.getElementById("msg");
+
+    // chat box mein ek line add karne ka function
+    function add(text, who) {
+      const div = document.createElement("div");   // naya div
+      div.className = who;                          // me ya bot style
+      div.textContent = text;                       // textContent = safe (HTML inject nahi hoga)
+      log.appendChild(div);                         // log mein daalo
+      log.scrollTop = log.scrollHeight;             // neeche scroll karo
+    }
+
+    // message bhejne ka function
+    async function send() {
+      const text = msg.value.trim();                // user ka text
+      if (!text) return;                            // khali ho to kuch na karo
+      add(text, "me");                              // user ka message dikhao
+      msg.value = "";                               // input saaf karo
+      try {
+        const res = await fetch("/chat", {          // server ko bhejo
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-API-Key": token },
+          body: JSON.stringify({ message: text, session_id: sessionId })
+        });
+        const data = await res.json();              // jawab parho
+        add(res.ok ? data.reply : (typeof data.detail === "string" ? data.detail : "Error"), "bot");  // jawab ya error
+      } catch (e) {
+        add("Network error, please try again.", "bot");  // internet masla
+      }
+    }
+
+    document.getElementById("send").onclick = send;  // button click
+    msg.addEventListener("keydown", e => { if (e.key === "Enter") send(); });  // Enter dabane par
+  </script>
+</body>
+</html>
